@@ -1,13 +1,34 @@
 # munchmap_helpers.py
-import os, math, requests
 from typing import List, Dict, Any, Optional
-from dotenv import load_dotenv
+import os, math, requests
+import streamlit as st
 
-load_dotenv()
-PLACES_API_KEY = os.getenv("PLACES_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
 
-# ---------- geo + price helpers ----------
+# --- Keys: prefer Streamlit Secrets; fallback to environment vars ---
+def _sec(name: str) -> Optional[str]:
+    try:
+        return st.secrets.get(name)
+    except Exception:
+        return None
+
+PLACES_API_KEY = (
+    _sec("GOOGLE_MAPS_API_KEY") or _sec("PLACES_API_KEY") or
+    os.getenv("GOOGLE_MAPS_API_KEY") or os.getenv("PLACES_API_KEY")
+)
+GEMINI_API_KEY = _sec("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+
+def _ensure_key():
+    """Stop the app with a clear message if the key is missing."""
+    if not PLACES_API_KEY:
+        st.error("Google Places API key missing. Add GOOGLE_MAPS_API_KEY to Streamlit Secrets (or set env).")
+        st.stop()
+        
+#---------geo + price helpers ----------
 def in_usa(lat: float, lng: float) -> bool:
     conus = 24.396308 <= lat <= 49.384358 and -124.848974 <= lng <= -66.885444
     ak = 51.214183 <= lat <= 71.538800 and -179.148909 <= lng <= -129.979500
@@ -31,42 +52,71 @@ def symbol_to_expected_range(symbol: str):
 def place_photo_url(photo_name: Optional[str]) -> Optional[str]:
     return None if not photo_name else f"https://places.googleapis.com/v1/{photo_name}/media?maxHeightPx=720&key={PLACES_API_KEY}"
 
-# ---------- Google Places (New) ----------
+# ---------- Google Places (v1) Nearby Search ----------
 def places_nearby(lat: float, lng: float, radius_m: float, max_count: int = 20) -> List[Dict[str, Any]]:
+    """
+    Server-side call to Places API (v1) `places:searchNearby`.
+    Requirements:
+      - POST method
+      - X-Goog-FieldMask header (required)
+      - API key must NOT be referrer-restricted (use no app restriction; restrict by API)
+    """
+    _ensure_key()
+
     url = "https://places.googleapis.com/v1/places:searchNearby"
     headers = {
-        "Content-Type":"application/json",
+        "Content-Type": "application/json",
         "X-Goog-Api-Key": PLACES_API_KEY,
         "X-Goog-FieldMask": ",".join([
             "places.id","places.displayName","places.rating","places.userRatingCount",
             "places.priceLevel","places.formattedAddress","places.location",
-            "places.primaryType","places.types"
-        ])
+            "places.primaryType","places.types","places.websiteUri"
+        ]),
     }
     payload = {
-        # Primary = restaurant. Also allow adjacent food types to avoid starving results.
         "includedPrimaryTypes": ["restaurant"],
-        "includedTypes": ["meal_takeaway","cafe"],
+        "includedTypes": ["meal_takeaway", "cafe"],
         "maxResultCount": int(min(max_count, 20)),
         "locationRestriction": {
             "circle": {"center": {"latitude": float(lat), "longitude": float(lng)}, "radius": float(radius_m)}
-        }
+        },
     }
-    r = requests.post(url, headers=headers, json=payload, timeout=30)
-    r.raise_for_status()
-    return r.json().get("places", [])
 
+    resp = requests.post(url, headers=headers, json=payload, timeout=30)
+    try:
+        resp.raise_for_status()
+    except requests.HTTPError as e:
+        # Show helpful detail (common: 403 due to key restriction/billing)
+        st.error(f"Places Nearby error {resp.status_code}: {resp.text[:600]}")
+        raise
+    return resp.json().get("places", [])
+
+# ---------- Google Places (v1) Place Details ----------
 def place_details(place_id: str) -> Dict[str, Any]:
+    """
+    Fetches details for a single place id.
+    """
+    _ensure_key()
+
     url = f"https://places.googleapis.com/v1/places/{place_id}"
     headers = {
         "X-Goog-Api-Key": PLACES_API_KEY,
         "X-Goog-FieldMask": ",".join([
-            "id","websiteUri","currentOpeningHours","internationalPhoneNumber","photos.name"
-        ])
+            "id",
+            "websiteUri",
+            "currentOpeningHours",
+            "internationalPhoneNumber",
+            "photos.name",
+            # add lightweight extras if you want:
+            "rating",
+            "userRatingCount",
+        ]),
     }
-    r = requests.get(url, headers=headers, timeout=30)
-    return r.json() if r.ok else {}
-
+    resp = requests.get(url, headers=headers, timeout=30)
+    if not resp.ok:
+        st.error(f"Place details error {resp.status_code}: {resp.text[:600]}")
+        return {}
+    return resp.json()
 # ---------- Gemini (short blurb) ----------
 def _gemini_call(prompt: str, model: str, max_tokens: int, temperature: float = 0.4):
     if not GEMINI_API_KEY:
