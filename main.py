@@ -5,7 +5,7 @@ os.environ.setdefault("TF_LITE_DISABLE_XNNPACK", "1")    # avoid some macOS dead
 os.environ.setdefault("OMP_NUM_THREADS", "1")            # be conservative
 os.environ.setdefault("TF_METAL_ENABLE", "0")            # TEMP: disable Metal if installed
 os.environ.setdefault("KERAS_BACKEND", "tensorflow")     # Ensure Keras uses TensorFlow backend
-import setuptools  # <- this activates setuptools’ distutils shim
+#import setuptools  #Commenting out for new version teest
 
 import streamlit as st
 
