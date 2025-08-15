@@ -24,6 +24,8 @@ SherpaCIS9660/
 ├─ artifacts/                  # Build artifacts
 ├─ .venv/                      # Virtual environment
 ├─ .streamlit/                 # Streamlit configuration
+├─ preprocessing&modeling_treenutclassifier.py # Original tree nut training notebook
+├─ preprocessing&modeling_proj1.py # Sales prediction modeling process
 ├─ best_nut_model.pkl          # Main Random Forest model (522 KB)
 ├─ nut_scaler.pkl              # Feature scaler for model (2 KB)
 ├─ nut_model_rank1_random_forest.pkl    # Backup: Random Forest
@@ -195,6 +197,12 @@ python-dotenv           # Environment variables
 - `nut_scaler.pkl` - Feature scaling parameters
 - Backup models for comparison and fallback
 
+### **Development & Training Files:**
+- `preprocessing&modeling_treenutclassifier.py` - Complete tree nut classifier development
+- `preprocessing&modeling_proj1.py` - Sales prediction model development  
+- `train_local.py` - Local model training script
+- `resize_nuts.py` - Image preprocessing utilities
+
 ### **Visualization Files:**
 - `nut_samples.png` - Training data samples
 - `nut_feature_extraction_visualization.png` - Feature extraction demo
@@ -202,6 +210,11 @@ python-dotenv           # Environment variables
 ### **Training Data:**
 - `Nuts_small/` - 360 organized training images
 - `Nuts_small.zip` - Compressed dataset backup
+
+### **Backend Files:**
+- `treenutclassifier.py` - Random Forest backend
+- `model_report.py` - Sales model evaluation utilities
+- `munchmap_helpers.py` - Restaurant search utilities
 
 ---
 
