@@ -11,9 +11,9 @@ from skimage.filters import prewitt_h, prewitt_v
 # Load trained model and scaler
 def load_trained_model():
     try:
-        with open("best_nut_model.pkl", "rb") as f:
+        with open('best_nut_model.pkl', 'rb') as f:
             model = pickle.load(f)
-        with open("nut_scaler.pkl", "rb") as f:
+        with open('nut_scaler.pkl', 'rb') as f:
             scaler = pickle.load(f)
         return model, scaler
     except FileNotFoundError:
@@ -24,11 +24,11 @@ def extract_features_from_image(image):
     # Parameters (same as training)
     radius = 1
     n_points = 8 * radius
-    METHOD = "uniform"
+    METHOD = 'uniform'
     
     # Convert PIL Image to numpy array if needed
-    if hasattr(image, "convert"):
-        image = np.array(image.convert("RGB")) / 255.0
+    if hasattr(image, 'convert'):
+        image = np.array(image.convert('RGB')) / 255.0
     
     # Resize image to 64x64 (same as training)
     image_resized = resize(image, (64, 64), anti_aliasing=True)
@@ -87,7 +87,7 @@ def predict_nut(image):
         prediction = model.predict(features_scaled)[0]
         probabilities = model.predict_proba(features_scaled)[0]
         
-        class_names = ["Almond", "Cashew", "Walnut"]
+        class_names = ['Almond', 'Cashew', 'Walnut']
         predicted_class = class_names[prediction]
         confidence = float(probabilities[prediction])
         
@@ -109,7 +109,7 @@ def get_eval_report():
     if model is None:
         return {
             "accuracy": 0.00,
-            "classification_report_text": "Trained model files not found.Please ensure best_nut_model.pkl and nut_scaler.pkl are in the project directory.",
+            "classification_report_text": "Trained model files not found.\nPlease ensure 'best_nut_model.pkl' and 'nut_scaler.pkl' are in the project directory.",
             "model_loaded": False
         }
     

@@ -1,5 +1,15 @@
+import os
+os.environ.setdefault("SETUPTOOLS_USE_DISTUTILS", "local")  # <- use vendorized distutils
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")       # quieter logs
+os.environ.setdefault("TF_LITE_DISABLE_XNNPACK", "1")    # avoid some macOS deadlocks
+os.environ.setdefault("OMP_NUM_THREADS", "1")            # be conservative
+os.environ.setdefault("TF_METAL_ENABLE", "0")            # TEMP: disable Metal if installed
+os.environ.setdefault("KERAS_BACKEND", "tensorflow")     # Ensure Keras uses TensorFlow backend
+import setuptools  # <- this activates setuptools’ distutils shim
+
 import streamlit as st
 
+# st.set_option("server.runOnSave", False)    
 @st.cache_resource(show_spinner=True)
 def load_model_safely():
     try:
@@ -61,8 +71,8 @@ div.stButton > button:hover {
 st.markdown('<div class="title">SherpaCIS9660</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Your hub for interactive AI-powered tools</div>', unsafe_allow_html=True)
 
-# ---- Buttons in Grid ----
-col1, col2 = st.columns(2)
+# ---- Buttons ----
+col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("🍽️ MunchMap Agent", key="munchmap", help="Restaurant Recommender Tool"):
@@ -80,10 +90,6 @@ with col2:
             st.session_state["_nav"] = "proj1"
             st.experimental_rerun()
 
-st.write("")  # Spacer
-
-col3, col4 = st.columns(2)
-
 with col3:
     if st.button("🌰Tree Nut Image CLassifier", key="coming", help="Interactive Image Classifier"):
         try:
@@ -92,13 +98,7 @@ with col3:
             st.session_state["_nav"] = "treenutsimageclassifier"
             st.experimental_rerun()
 
-with col4:
-    if st.button("📚 About", key="about", help="Learn more about SherpaCIS9660"):
-        try:
-            st.switch_page("pages/About.py")
-        except AttributeError:
-            st.session_state["_nav"] = "about"
-            st.experimental_rerun()
+
 
 # ---- Fallback router for older Streamlit ----
 _nav = st.session_state.get("_nav")
