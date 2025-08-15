@@ -1,14 +1,24 @@
+# Environment files
 .env
+.env.*
+*.env
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
+# Virtual environments
 .venv/
 .venv*/
 env/
 venv/
+
+# macOS
 .DS_Store
+
+# Logs / temp
 *.log
 *.tmp
 *.swp
@@ -18,4 +28,7 @@ Nuts_small.zip
 *.h5
 *.joblib
 *.npy
+
+# Streamlit cache
 .streamlit/
+
